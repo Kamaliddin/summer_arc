@@ -1,15 +1,12 @@
 import streamlit as st
-from database import (init_db, get_targets, get_weekly_revenue, update_target,
-                      update_today_revenue, get_all_employees, get_employee_stats,
-                      get_all_tables, book_table, clear_table, ensure_weekly_revenue,
-                      get_simulated_today, get_simulated_today_name, get_today_revenue_row)
+import database as db
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import time
 
-init_db()
-ensure_weekly_revenue()
+db.init_db()
+db.ensure_weekly_revenue()
 
 
 if 'modal_table' not in st.session_state:
@@ -181,25 +178,25 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # SHARED DATA (simulated today = Wednesday)
-today_name = get_simulated_today_name()
-sim_today = get_simulated_today()
+today_name = db.get_simulated_today_name()
+sim_today = db.get_simulated_today()
 today_date = sim_today.strftime('%d %B %Y')
 today_time = datetime.now().strftime('%H:%M')
-today_target = get_targets(today_name)
+today_target = db.get_targets(today_name)
 OWNER_TARGET = today_target['revenue_target']
 CUSTOMER_TARGET = today_target['customers_target']
-weekly_data = get_weekly_revenue()
+weekly_data = db.get_weekly_revenue()
 WEEKLY_REVENUE = [r['revenue'] for r in weekly_data]
 DAYS = [datetime.strptime(r['date'], '%Y-%m-%d').strftime('%a') for r in weekly_data]
 WEEKLY_AVG = sum(WEEKLY_REVENUE)//len(WEEKLY_REVENUE) if WEEKLY_REVENUE else 0
-employees = get_all_employees()
-tables = get_all_tables()
+employees = db.get_all_employees()
+tables = db.get_all_tables()
 DAY_TARGETS = []
 for row in weekly_data:
     d = datetime.strptime(row['date'], '%Y-%m-%d').strftime('%A')
-    t = get_targets(d)
+    t = db.get_targets(d)
     DAY_TARGETS.append(t['revenue_target'])
-today_row = get_today_revenue_row()
+today_row = db.get_today_revenue_row()
 today_rev = today_row['revenue']
 today_cust = today_row['customers']
 tuesday_str = (sim_today - timedelta(days=1)).isoformat()
@@ -219,7 +216,7 @@ def get_next(s):
         if s<t: return t-s,n
     return 0,"Legend"
 
-emp_stats_cache = {e['id']: get_employee_stats(e['id']) for e in employees}
+emp_stats_cache = {e['id']: db.get_employee_stats(e['id']) for e in employees}
 low_rated = [e for e in employees if emp_stats_cache[e['id']]['rating'] and emp_stats_cache[e['id']]['rating'] <= 3.0]
 overall_ratings = [emp_stats_cache[e['id']]['rating'] for e in employees if emp_stats_cache[e['id']]['rating']]
 overall_average_rating = round(sum(overall_ratings)/len(overall_ratings),1) if overall_ratings else 0
@@ -298,7 +295,7 @@ if page == "🏠  MAIN":
             chosen = st.selectbox("Assign to:", list(emp_names.keys()), key="modal_emp")
             col1,col2 = st.columns(2)
             if col1.button("⚔ Confirm Seating"):
-                book_table(t_id, emp_names[chosen])
+                db.book_table(t_id, emp_names[chosen])
                 st.session_state.modal_table = None
                 st.session_state.modal_mode = None
                 st.rerun()
@@ -311,7 +308,7 @@ if page == "🏠  MAIN":
             revenue = st.number_input("Table total (UZS)", step=10000, value=0, key="modal_revenue")
             col1,col2 = st.columns(2)
             if col1.button("💰 Confirm Payment"):
-                clear_table(t_id, rating, revenue)
+                db.clear_table(t_id, rating, revenue)
                 st.session_state.modal_table = None
                 st.session_state.modal_mode = None
                 st.rerun()
@@ -428,7 +425,7 @@ elif page == "⚙️  SETTINGS":
             new_rev=c1.number_input("Revenue target",value=target['revenue_target'],step=50000,key=f"r_{day}")
             new_cust=c2.number_input("Guest target",value=target['customers_target'],step=5,key=f"c_{day}")
             if st.button(f"Save {day}",key=f"s_{day}"):
-                update_target(day,new_rev,new_cust)
+                db.update_target(day,new_rev,new_cust)
                 ph=st.empty(); ph.success("✓ Saved to the ledger"); time.sleep(2); ph.empty(); st.rerun()
     st.divider()
     st.markdown('<div class="section-header">⚜ TODAY\'S RECORD</div>', unsafe_allow_html=True)
@@ -436,7 +433,7 @@ elif page == "⚙️  SETTINGS":
     t_rev=c1.number_input("Today's revenue",step=10000,value=today_rev)
     t_cust=c2.number_input("Today's guests",step=1,value=today_cust)
     if st.button("Record Today"):
-        update_today_revenue(t_rev,t_cust)
+        db.update_today_revenue(t_rev,t_cust)
         ph=st.empty(); ph.success("✓ Recorded"); time.sleep(2); ph.empty(); st.rerun()
     st.divider()
     st.markdown('<div class="section-header">⚜ SPECIAL DAY OVERRIDE</div>', unsafe_allow_html=True)
@@ -444,7 +441,7 @@ elif page == "⚙️  SETTINGS":
     s_rev=c1.number_input(f"{today_name} override",value=OWNER_TARGET,step=50000)
     s_cust=c2.number_input(f"{today_name} guests",value=CUSTOMER_TARGET,step=5)
     if st.button("Override Today Only"):
-        update_target(today_name,s_rev,s_cust)
+        db.update_target(today_name,s_rev,s_cust)
         ph=st.empty(); ph.success(f"✓ {today_name} overridden"); time.sleep(2); ph.empty(); st.rerun()
     st.markdown("""<div class="tavern-footer"><div style="color:#3D2B0A;">⚜ ─────────────────── ⚜</div><div class="footer-text">Steward's Quarters</div><div style="color:#3D2B0A;margin-top:1rem;">⚜ ─────────────────── ⚜</div></div>""", unsafe_allow_html=True)
 

@@ -1,8 +1,10 @@
+import os
 import sqlite3
 import random
 from datetime import date, datetime, timedelta
 
-DB_PATH = 'restaurant.db'
+# Use a DB path relative to this file so imports work from any cwd
+DB_PATH = os.path.join(os.path.dirname(__file__), 'restaurant.db')
 SIMULATED_TODAY_WEEKDAY = 2  # Wednesday (Monday=0)
 
 

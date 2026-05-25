@@ -19,15 +19,14 @@ if 'hide_rating_alert_main' not in st.session_state:
     st.session_state.hide_rating_alert_main = False
 if 'menu_open' not in st.session_state:
     st.session_state.menu_open = False
-if 'light_mode' not in st.session_state:
-    st.session_state.light_mode = False
 
 try:
     params = st.experimental_get_query_params()
 except Exception:
     params = {}
 
-light_mode = st.session_state.light_mode
+# Light mode UI removed — app uses dark theme by default
+light_mode = False
 
 if light_mode:
     button_bg = '#ffffff'
@@ -256,7 +255,6 @@ st.markdown("""
 
 # NAVIGATION
 st.sidebar.markdown("""<div style='padding:0.5rem 0 1rem;font-family:Cinzel,serif;font-size:0.62rem;color:#3D2B0A;letter-spacing:4px;'>⚜ NAVIGATION ⚜</div>""", unsafe_allow_html=True)
-st.sidebar.checkbox("Light mode", key="light_mode")
 page = st.sidebar.radio("", ["🏠  MAIN","📈  REVENUE","👥  STAFF","📋  REPORTS","⚙️  SETTINGS"], label_visibility="collapsed", key="nav_page")
 
 st.markdown('<div class="main-content">', unsafe_allow_html=True)
